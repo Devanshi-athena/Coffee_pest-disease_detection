@@ -1,0 +1,8 @@
+# Keep LF everywhere: the training notebook verifies SHA256 checksums of ml/src/*.py,
+# so a Windows checkout must not rewrite line endings.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.onnx binary
+*.npz binary
+*.zip binary
