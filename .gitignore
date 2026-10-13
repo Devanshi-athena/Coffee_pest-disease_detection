@@ -1,0 +1,41 @@
+# data and training outputs (large, regenerable, or third-party images)
+Data_dump/
+data/*
+!data/README.md
+artifacts/
+*.onnx
+*.npz
+*.zip
+backend/models/*
+!backend/models/README.md
+
+# trial photos come from the public datasets: keep the CSV, notes and README, rebuild photos with step 10
+trial_images/*.jpg
+
+# archive: keep scripts and READMEs in git, not the archived models, data and evaluation outputs
+archived_dump/artifacts/
+archived_dump/data/
+archived_dump/backend/models/
+
+# python
+.venv*/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# node
+node_modules/
+frontend/dist/
+
+# env / editors / OS
+.env
+.env.local
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+~$*
+*.log

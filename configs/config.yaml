@@ -1,0 +1,130 @@
+# Single source of truth for classes, paths and preprocessing.
+# All paths are relative to the repo root.
+project: coffee-leaf-ai
+
+# Fixed order: this is the class index used in training and in the ONNX output.
+classes: [healthy, rust, miner, phoma, cercospora]
+
+paths:
+  raw_dir: data/raw                  # data/raw/<source>/<class>/<images>
+  processed_dir: data/processed      # (5-class pipeline, archived)
+  metadata_csv: data/metadata.csv    # written by 02, updated by 03
+  kaggle_zip: data/coffee_leaf_kaggle.zip
+  artifacts_dir: artifacts           # training outputs (model.onnx, metrics.json, ...)
+  model_dir: backend/models          # where the backend looks for model.onnx
+
+image:
+  size: 224          # model input size (center crop)
+  resize: 256        # shorter side before the crop; also the stored size in data/processed
+  interpolation: bilinear
+  mean: [0.485, 0.456, 0.406]   # ImageNet
+  std: [0.229, 0.224, 0.225]    # ImageNet
+  jpeg_quality: 95
+  min_side: 64       # images smaller than this (px) are flagged as tiny and skipped
+  extensions: [.jpg, .jpeg, .png, .bmp, .tif, .tiff, .webp]
+
+# role: train          -> pooled and split into train/val/test
+# role: external_test  -> kept whole as split "test_<source>"
+# classes (optional)   -> only these classes are used from that source
+sources:
+  jmuben: {role: train}    # JMuBEN:  Cerscospora, Leaf rust, Phoma
+  jmuben2: {role: train}   # JMuBEN2: Healthy, Miner
+  uganda: {role: train}    # Health leaves, leaf rust, phoma
+  bracol: {role: external_test}
+  rocole: {role: external_test, classes: [healthy, rust]}
+
+# Raw folder names are normalized (lowercase, non-alphanumerics -> "_") and then
+# looked up here. Unknown folder names are reported and skipped, never guessed.
+label_aliases:
+  healthy: [healthy, health, normal, healthy_leaf, healthy_leaves, health_leaves]
+  rust: [rust, leaf_rust, coffee_leaf_rust, rust_level_1, rust_level_2, rust_level_3, rust_level_4]
+  miner: [miner, leaf_miner, coffee_leaf_miner]
+  phoma: [phoma, phoma_leaf_spot]
+  cercospora: [cercospora, cerscospora, cercospora_leaf_spot, brown_eye_spot]
+
+# Folder names that are known and deliberately not used (e.g. pests out of scope).
+ignore_labels: [red_spider_mite, spider_mite]
+
+split:
+  ratios: {train: 0.70, val: 0.15, test: 0.15}
+  seed: 42
+  max_per_class: 3000   # cap per class in the train pool, applied per cluster (null = no cap)
+  hash_size: 8          # perceptual hash is hash_size^2 = 64 bits
+  max_hamming: 4        # hashes within this distance are treated as near-duplicates
+
+train:
+  model_name: efficientnet_b0   # any timm model name
+  pretrained: true
+  batch_size: 32
+  num_workers: 2
+  stage1: {epochs: 3, lr: 1.0e-3}    # classifier head only, backbone frozen
+  stage2: {epochs: 12, lr: 1.0e-4}   # full network
+  weight_decay: 1.0e-4
+  label_smoothing: 0.1
+  class_weighted_loss: true
+  onnx_opset: 18                # native opset of the torch.export-based exporter
+
+# Phase 1: healthy vs rust (experiment, archived: script in archived_dump/ml/scripts/07_build_phase1_dataset.py).
+phase1:
+  name: healthy_rust_v1
+  classes: [healthy, rust]
+  label_map: {healthy: healthy, rust: rust}
+  bracol_rust_from_symptoms: true        # BRACOL leaf with any rust -> rust (labels are "predominant" only)
+  # Never trained on; kept as an evaluation set for the "not sure" behaviour.
+  ood:
+    other_disease: [phoma, miner, cercospora]                # by 5-class label
+    out_of_scope: [red_spider_mite, unmapped_stress_code_5]  # by raw folder
+  exclude_source_labels:                 # source/label combinations left out of the dataset entirely
+    - {source: jmuben2, label: healthy, reason: "JMuBEN2 Healthy: only 2 independent images"}
+  exclude_flagged_for_review: true       # artifacts/audit/label_review.csv
+  exclude_rocole_side_disagreement: true # leaves whose top/underside photos disagree
+  external_test_sources: [rocole]        # completely unseen: phone photos of whole leaves in the field
+  whole_leaf_sources: [bracol, rocole]   # get controlled crop views (see crops below)
+  split:
+    ratios: {train: 0.70, val: 0.15, test: 0.15}
+    seed: 42
+  crops:                                 # precomputed views for whole-leaf train/val images
+    leaf_margin: 0.08                    # leaf view = leaf bounding box + this margin
+    zoom_per_image: 3                    # max square zoom crops per image
+    zoom_side: [0.55, 0.9]               # crop side as a fraction of the leaf box's shorter side
+    min_leaf_fraction: 0.6               # crop must be >= 60% leaf tissue
+    min_rust_share: 0.3                  # rust leaves: crop must hold >= 30% of the leaf's rust-coloured pixels
+    min_rust_pixels: 30                  # rust leaves with less rust colour than this get the leaf view only
+  store_shorter_side: 512                # processed copies: never upscaled; big photos shrunk to this
+  jpeg_quality: 92
+  output_dir: data/processed_phase1
+  kaggle_zip: data/phase1_kaggle.zip
+
+# Phase 2: healthy / rust / other disease, with RoCoLe farms split between training and a locked test.
+# Built by ml/scripts/08_build_phase2_dataset.py. Phase 1 data and results stay as they are.
+phase2:
+  name: hro_v2
+  classes: [healthy, rust, other]        # other = phoma, miner or cercospora (a leaf disease that is not rust)
+  label_map: {healthy: healthy, rust: rust, phoma: other, miner: other, cercospora: other}
+  bracol_rust_from_symptoms: true        # BRACOL leaf with any rust -> rust
+  out_of_scope: [red_spider_mite, unmapped_stress_code_5]   # never trained on: tests the "not sure" path
+  exclude_source_labels:
+    - {source: jmuben2, label: healthy, reason: "JMuBEN2 Healthy: only 2 independent images"}
+  exclude_flagged_for_review: true
+  exclude_rocole_side_disagreement: true
+  whole_leaf_sources: [bracol, rocole]
+  split:
+    ratios: {train: 0.70, val: 0.15, test: 0.15}   # JMuBEN, JMuBEN2, Uganda, BRACOL (grouped)
+    seed: 42
+  rocole_farm_split: {train: 6, val: 2, test_locked: 4}   # whole farms; test_locked is evaluated once, at the end
+  crops:
+    leaf_margin: 0.08
+    zoom_per_image: 3
+    zoom_side: [0.55, 0.9]
+    min_leaf_fraction: 0.6
+    min_symptom_share: 0.3               # rust/other leaves: a zoom must hold >= 30% of the leaf's symptom pixels
+    min_symptom_pixels: 30               # fewer symptom pixels than this -> leaf view only
+  store_shorter_side: 512
+  jpeg_quality: 92
+  output_dir: data/processed_phase2
+  kaggle_zip: data/phase2_kaggle.zip
+
+inference:
+  confidence_threshold: 0.60   # fallback only: a model's own decision.json (fitted on validation) takes precedence
+  top_k: 3
+  max_upload_mb: 10

@@ -1,0 +1,10 @@
+# Local CPU data prep (Python 3.11). Install into ml/.venv, see README.
+pillow>=10.4
+imagehash>=4.3      # reference implementation; ml/src/common.py reproduces its phash
+scipy>=1.13         # DCT for the perceptual hash, connected components
+pandas>=2.2
+numpy>=2.0          # np.bitwise_count is used in 01_inspect_raw.py
+scikit-learn>=1.5
+tqdm>=4.66
+pyyaml>=6.0
+opencv-python-headless>=4.10

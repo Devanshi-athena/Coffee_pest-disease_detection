@@ -1,0 +1,18 @@
+# Local CPU env for converting the pretrained baseline to ONNX and evaluating it (Python 3.11).
+# torch is only needed for the one-time export; evaluation itself runs through onnxruntime.
+# Install torch from the CPU index:  uv pip install --python ml/.venv-eval torch --index-url https://download.pytorch.org/whl/cpu
+torch>=2.5
+timm>=1.0
+safetensors>=0.4
+onnx>=1.16
+onnxscript>=0.3
+onnxruntime>=1.18
+numpy>=2.0
+pandas>=2.2
+scikit-learn>=1.5
+scipy>=1.13
+matplotlib>=3.8
+pillow>=10.4
+opencv-python-headless>=4.10
+pyyaml>=6.0
+tqdm>=4.66

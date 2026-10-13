@@ -1,0 +1,12 @@
+# The backend image is built from the repo root; keep data and envs out of the build context.
+data/
+artifacts/
+**/.venv/
+**/node_modules/
+**/__pycache__/
+**/.pytest_cache/
+frontend/
+ml/
+.git/
+.env
+backend/models/*.onnx

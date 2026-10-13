@@ -1,0 +1,27 @@
+# Local run: backend on http://localhost:8100, frontend on http://localhost:8180
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8100:8100"
+    environment:
+      CORS_ORIGINS: http://localhost:8180,http://localhost:5180
+    volumes:
+      - ./backend/models:/app/models:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8100/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: http://localhost:8100   # URL the *browser* uses to reach the backend
+    ports:
+      - "8180:80"
+    depends_on:
+      - backend
