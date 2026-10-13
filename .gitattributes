@@ -6,3 +6,6 @@
 *.onnx binary
 *.npz binary
 *.zip binary
+# These two were checksummed by the training notebook with CRLF endings: store them byte-for-byte.
+ml/src/export_onnx.py -text
+ml/src/phase2.py -text
