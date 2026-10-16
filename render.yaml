@@ -1,0 +1,14 @@
+# Render Blueprint: dashboard -> New -> Blueprint -> pick this repo -> Apply.
+# Free web service; redeploys on every push to main. The model comes from the baseline-v1 GitHub release.
+services:
+  - type: web
+    name: coffee-leaf-ai
+    runtime: docker
+    plan: free
+    branch: main
+    dockerfilePath: ./deploy/render/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: ORT_THREADS
+        value: "1"

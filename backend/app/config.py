@@ -1,7 +1,7 @@
 """Backend settings: defaults from configs/config.yaml, overridable by env vars.
 
 Env vars: CONFIG_PATH, MODEL_DIR, CONFIDENCE_THRESHOLD, MAX_UPLOAD_MB, CORS_ORIGINS (comma-separated),
-STATIC_DIR (built frontend to serve at /, for single-container hosting).
+STATIC_DIR (built frontend to serve at /, for single-container hosting), ORT_THREADS (read by inference.py).
 """
 from __future__ import annotations
 

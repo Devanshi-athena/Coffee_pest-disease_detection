@@ -7,6 +7,7 @@ from __future__ import annotations
 import io
 import json
 import logging
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -130,7 +131,10 @@ class Predictor:
         spec = PreprocessSpec.from_dict(json.loads((model_dir / "preprocess.json").read_text(encoding="utf-8")))
         if sorted(labels) != sorted(expected_classes):  # order may differ: labels.json follows the model output
             log.warning("labels.json %s differs from config classes %s; using labels.json", labels, expected_classes)
-        session = ort.InferenceSession(str(model_dir / "model.onnx"), providers=["CPUExecutionProvider"])
+        opts = ort.SessionOptions()
+        # ORT_THREADS caps CPU threads (1 on fractional-CPU hosts, where extra threads only contend); 0 = all cores.
+        opts.intra_op_num_threads = int(os.environ.get("ORT_THREADS", "0"))
+        session = ort.InferenceSession(str(model_dir / "model.onnx"), opts, providers=["CPUExecutionProvider"])
         n_out = session.get_outputs()[0].shape[-1]
         if isinstance(n_out, int) and n_out != len(labels):
             raise ModelNotAvailable(f"model outputs {n_out} classes but labels.json has {len(labels)}")

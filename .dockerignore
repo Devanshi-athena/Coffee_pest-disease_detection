@@ -1,11 +1,13 @@
-# The backend image is built from the repo root; keep data and envs out of the build context.
+# Images are built from the repo root; keep data and envs out of the build context.
+# frontend/ stays in (deploy/render/Dockerfile builds it); backend/Dockerfile simply does not copy it.
 data/
 artifacts/
 **/.venv/
 **/node_modules/
 **/__pycache__/
 **/.pytest_cache/
-frontend/
+frontend/node_modules/
+frontend/dist/
 ml/
 .git/
 .env

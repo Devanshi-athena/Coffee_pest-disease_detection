@@ -117,15 +117,19 @@ Without a model, the backend still starts: `/health` reports `"model_loaded": fa
 
 Docker: `docker compose up --build` (backend :8100, frontend :8180; `backend/models` is mounted read-only).
 
-### Public demo (Hugging Face Space)
+### Public demo (Render, free tier)
 
-`deploy/huggingface/` holds a Docker Space: one container builds the frontend and serves it with the API and the
-model on port 7860 (`STATIC_DIR`; the frontend is built with an empty `VITE_API_URL`, so it calls its own origin).
-```bash
-ml/.venv-eval/Scripts/hf auth login                       # once, with a write token
-ml/.venv-eval/Scripts/python deploy/huggingface/push_space.py --space <owner>/<space-name>
-```
-The script copies the model from `backend/models/` (checked against `model_info.json`) and creates the Space as public.
+`render.yaml` + `deploy/render/Dockerfile`: one container builds the frontend and serves it with the API on Render's
+port. The model is downloaded at build time from the GitHub release `baseline-v1` and checked against
+`deploy/render/model_files.sha256`. `ORT_THREADS=1` suits the free tier's fractional CPU.
+Set up once: render.com -> New -> Blueprint -> this repo -> Apply. Every push to `main` redeploys.
+Free tier: sleeps after 15 min idle (about a minute to wake), a few seconds per photo.
+
+To ship a new model: upload its files to a new release, point `MODEL_RELEASE` in the Dockerfile at it and
+regenerate `model_files.sha256`.
+
+`deploy/huggingface/` does the same for a Hugging Face Docker Space (`push_space.py`); since mid-2026 Docker
+Spaces need a PRO subscription.
 
 ### API
 
