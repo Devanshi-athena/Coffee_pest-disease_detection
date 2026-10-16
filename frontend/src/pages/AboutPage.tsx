@@ -42,6 +42,11 @@ export function AboutPage() {
         <li>It is not a diagnosis. Confirm with an agronomist or extension officer before treating.</li>
       </ul>
 
+      <h3>Who made it</h3>
+      <p>
+        Coffee Leaf AI is a prototype developed by <strong>APLYD</strong>, by Athena Infonomics.
+      </p>
+
       <h3>Privacy</h3>
       <p>Photos are sent to the server for analysis and are not stored by this app.</p>
     </main>

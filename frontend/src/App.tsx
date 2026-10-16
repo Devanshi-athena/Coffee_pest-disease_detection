@@ -18,8 +18,12 @@ export default function App() {
   return (
     <>
       <header className="topbar">
-        <a href="#/" className="brand">
-          Coffee Leaf AI
+        <a href="#/" className="brand" aria-label="APLYD Coffee Leaf AI, home">
+          <picture>
+            <source srcSet="/brand/aplyd-logo-light.png" media="(prefers-color-scheme: dark)" />
+            <img className="brand__logo" src="/brand/aplyd-logo.png" alt="APLYD" width="295" height="120" />
+          </picture>
+          <span className="brand__app">Coffee Leaf AI</span>
         </a>
         <nav>
           <a href="#/" aria-current={route === 'predict' ? 'page' : undefined}>
@@ -31,6 +35,9 @@ export default function App() {
         </nav>
       </header>
       {route === 'about' ? <AboutPage /> : <PredictPage />}
+      <footer className="footer">
+        A prototype by <strong>APLYD</strong> · Athena Infonomics. A screening aid, not a diagnosis.
+      </footer>
     </>
   )
 }
