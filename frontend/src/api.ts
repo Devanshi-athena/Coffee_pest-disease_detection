@@ -10,7 +10,8 @@ export type Prediction = {
   threshold: number
 }
 
-export const API_URL = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8100').replace(/\/+$/, '')
+// Unset: local backend. Set to an empty string: same origin (backend also serves the frontend, e.g. Hugging Face).
+export const API_URL = (import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8100').replace(/\/+$/, '')
 
 export class ApiError extends Error {
   status: number

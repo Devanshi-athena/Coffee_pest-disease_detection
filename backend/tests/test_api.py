@@ -161,3 +161,12 @@ def test_low_confidence_reason(client):
     with_model(client, [1.0, 1.1, 0.9])
     body = client.post("/predict", files={"file": ("leaf.jpg", jpeg_bytes(), "image/jpeg")}).json()
     assert body["outcome"] == "not_sure" and body["reason"] == "low_confidence"
+
+
+def test_serves_frontend_and_keeps_api_routes(settings, tmp_path):
+    site = tmp_path / "site"
+    site.mkdir()
+    (site / "index.html").write_text("<title>Coffee Leaf AI</title>")
+    with TestClient(create_app(replace(settings, static_dir=site))) as c:
+        assert "Coffee Leaf AI" in c.get("/").text
+        assert c.get("/health").json()["status"] == "ok"

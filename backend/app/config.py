@@ -1,6 +1,7 @@
 """Backend settings: defaults from configs/config.yaml, overridable by env vars.
 
-Env vars: CONFIG_PATH, MODEL_DIR, CONFIDENCE_THRESHOLD, MAX_UPLOAD_MB, CORS_ORIGINS (comma-separated).
+Env vars: CONFIG_PATH, MODEL_DIR, CONFIDENCE_THRESHOLD, MAX_UPLOAD_MB, CORS_ORIGINS (comma-separated),
+STATIC_DIR (built frontend to serve at /, for single-container hosting).
 """
 from __future__ import annotations
 
@@ -22,6 +23,7 @@ class Settings:
     top_k: int
     max_upload_bytes: int
     cors_origins: list[str]
+    static_dir: Path | None = None       # STATIC_DIR env var: serve the built frontend at /
 
 
 def find_config() -> Path:
@@ -49,4 +51,5 @@ def load_settings() -> Settings:
         top_k=int(inf["top_k"]),
         max_upload_bytes=int(float(os.environ.get("MAX_UPLOAD_MB", inf["max_upload_mb"])) * 1024 * 1024),
         cors_origins=[o.strip() for o in origins.split(",") if o.strip()],
+        static_dir=Path(os.environ["STATIC_DIR"]) if os.environ.get("STATIC_DIR") else None,
     )

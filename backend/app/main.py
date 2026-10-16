@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from .config import Settings, load_settings
 from .inference import MODEL_FILES, InvalidImage, ModelNotAvailable, Predictor, load_image
@@ -63,6 +64,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         except InvalidImage as e:
             raise HTTPException(400, str(e)) from e
         return predictor.predict(img)
+
+    # Single-container hosting: serve the built frontend at / (mounted last, so the API routes above win).
+    if settings.static_dir is not None:
+        app.mount("/", StaticFiles(directory=settings.static_dir, html=True), name="frontend")
 
     return app
 

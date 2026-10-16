@@ -117,6 +117,16 @@ Without a model, the backend still starts: `/health` reports `"model_loaded": fa
 
 Docker: `docker compose up --build` (backend :8100, frontend :8180; `backend/models` is mounted read-only).
 
+### Public demo (Hugging Face Space)
+
+`deploy/huggingface/` holds a Docker Space: one container builds the frontend and serves it with the API and the
+model on port 7860 (`STATIC_DIR`; the frontend is built with an empty `VITE_API_URL`, so it calls its own origin).
+```bash
+ml/.venv-eval/Scripts/hf auth login                       # once, with a write token
+ml/.venv-eval/Scripts/python deploy/huggingface/push_space.py --space <owner>/<space-name>
+```
+The script copies the model from `backend/models/` (checked against `model_info.json`) and creates the Space as public.
+
 ### API
 
 | | |

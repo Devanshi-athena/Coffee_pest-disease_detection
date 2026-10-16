@@ -48,7 +48,10 @@ export function AboutPage() {
       </p>
 
       <h3>Privacy</h3>
-      <p>Photos are sent to the server for analysis and are not stored by this app.</p>
+      <p>
+        Photos are sent to the server for analysis and are not stored by this app. The public demo runs on
+        Hugging Face, so photos are processed on their servers.
+      </p>
     </main>
   )
 }
