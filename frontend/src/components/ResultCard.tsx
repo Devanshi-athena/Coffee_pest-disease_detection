@@ -1,90 +1,123 @@
 import type { Prediction } from '../api'
-import { displayName } from '../labels'
+import { displayName, OUTCOMES, outcomeOf, type Outcome } from '../labels'
+import { CheckIcon, FocusIcon, LeafIcon, OutcomeIcon, SunIcon } from './Icons'
 
 const pct = (x: number) => `${Math.round(x * 100)}%`
 
-// What each answer means for the user. Worded so that no answer reads as a diagnosis.
-const EXPLAIN: Record<string, string> = {
-  rust:
-    'The leaf shows signs that look like coffee leaf rust. Other problems, such as mite damage, can look similar.',
-  healthy:
-    'No signs of rust or other common leaf diseases were found on this leaf. Other leaves on the plant may differ.',
-  other:
-    'The leaf shows a problem that does not look like rust, for example leaf spots or leaf miner damage. ' +
-    'This app cannot tell which one.',
-}
-
 export function ResultCard({ result }: { result: Prediction }) {
-  if (result.uncertain) {
-    const unfamiliar = result.reason === 'unfamiliar_image'
-    return (
-      <section className="card card--warn" aria-live="polite">
-        <h2>Not sure</h2>
-        <p>
-          {unfamiliar
-            ? "This photo doesn't look like the coffee leaf photos the model learned from, so it won't guess."
-            : "The model can't tell clearly from this photo."}{' '}
-          Try another photo with:
-        </p>
-        <ul className="tips">
-          <li>One coffee leaf, filling most of the frame</li>
-          <li>Daylight, no harsh shadows or flash glare</li>
-          <li>Sharp focus, not blurry</li>
-        </ul>
-        {/* An unfamiliar photo gets no guesses at all: any guess could mislead. */}
-        {!unfamiliar && (
-          <>
-            <p className="eyebrow">Possible, but not reliable</p>
-            <TopGuesses result={result} muted />
-          </>
-        )}
-      </section>
-    )
-  }
+  const outcome = outcomeOf(result)
+  const copy = OUTCOMES[outcome]
 
   return (
-    <section className={`card${result.label === 'rust' ? ' card--alert' : ''}`} aria-live="polite">
-      <p className="eyebrow">Result</p>
-      <h2>{displayName(result.label)}</h2>
-      <p>{EXPLAIN[result.label] ?? ''}</p>
-      <ConfidenceBar value={result.confidence} />
-      <TopGuesses result={result} />
-      <p className="note">
-        This is a screening estimate, not a diagnosis. Confirm with an agronomist or extension officer before
-        treating.
+    <section className={`result result--${outcome}`} aria-live="polite" aria-labelledby="result-title">
+      <header className="result__head">
+        <span className="result__badge">
+          <OutcomeIcon outcome={outcome} />
+        </span>
+        <div>
+          <p className="eyebrow">Result</p>
+          <h2 id="result-title" className="result__title">{copy.title}</h2>
+        </div>
+      </header>
+
+      {outcome === 'not_sure' ? <NotSure result={result} /> : <Answered result={result} outcome={outcome} />}
+
+      <p className="result__note">
+        A screening estimate, not a diagnosis. Confirm with an agronomist or extension officer before treating.
       </p>
     </section>
   )
 }
 
-function ConfidenceBar({ value }: { value: number }) {
+function Answered({ result, outcome }: { result: Prediction; outcome: Outcome }) {
+  const copy = OUTCOMES[outcome]
   return (
-    <div className="conf">
+    <>
+      <p className="result__explain">{copy.explain}</p>
+      <ConfidenceMeter value={result.confidence} threshold={result.threshold} />
+      <details className="breakdown">
+        <summary>See all answers</summary>
+        <Breakdown result={result} />
+      </details>
+      <div className="next">
+        <h3>What to do next</h3>
+        <ul className="checklist">
+          {copy.next.map((n) => (
+            <li key={n}>
+              <CheckIcon />
+              <span>{n}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </>
+  )
+}
+
+function NotSure({ result }: { result: Prediction }) {
+  const unfamiliar = result.reason === 'unfamiliar_image'
+  return (
+    <>
+      <p className="result__explain">
+        {unfamiliar
+          ? "This photo doesn't look like the coffee leaf photos the model learned from, so it won't guess. It may show a problem the model does not know, or the photo may be framed differently."
+          : "The model can't tell clearly from this photo, so it won't guess."}
+      </p>
+      <div className="next">
+        <h3>Try another photo with</h3>
+        <ul className="tips-row">
+          <li><LeafIcon /><span>One leaf filling most of the frame</span></li>
+          <li><SunIcon /><span>Daylight, no harsh shadows or flash</span></li>
+          <li><FocusIcon /><span>Sharp focus, not blurry</span></li>
+        </ul>
+      </div>
+      {/* An unfamiliar photo gets no guesses at all: any guess could mislead. */}
+      {!unfamiliar && (
+        <details className="breakdown">
+          <summary>Possible, but not reliable</summary>
+          <Breakdown result={result} muted />
+        </details>
+      )}
+    </>
+  )
+}
+
+function ConfidenceMeter({ value, threshold }: { value: number; threshold: number }) {
+  const level = value >= 0.95 ? 'High' : value >= 0.85 ? 'Good' : 'Moderate'
+  return (
+    <div className="meter">
+      <div className="meter__label">
+        <span>Confidence</span>
+        <strong>
+          {pct(value)} <span className="meter__level">{level}</span>
+        </strong>
+      </div>
       <div
-        className="conf__track"
+        className="meter__track"
         role="progressbar"
         aria-label="Confidence"
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={Math.round(value * 100)}
       >
-        <div className="conf__fill" style={{ width: pct(value) }} />
+        <div className="meter__fill" style={{ width: pct(value) }} />
+        <div className="meter__tick" style={{ left: pct(threshold) }} />
       </div>
-      <span className="conf__value">{pct(value)} confidence</span>
+      <p className="meter__hint">The app only gives an answer above {pct(threshold)} confidence.</p>
     </div>
   )
 }
 
-function TopGuesses({ result, muted = false }: { result: Prediction; muted?: boolean }) {
+function Breakdown({ result, muted = false }: { result: Prediction; muted?: boolean }) {
   return (
-    <ol className={`top3${muted ? ' top3--muted' : ''}`} aria-label="All answers by confidence">
+    <ol className={`bars${muted ? ' bars--muted' : ''}`} aria-label="All answers by confidence">
       {result.top3.map((g) => (
-        <li key={g.label}>
-          <span>{displayName(g.label)}</span>
-          <span className="top3__bar">
+        <li key={g.label} className={`bars__row bars__row--${g.label}`}>
+          <span className="bars__name">{displayName(g.label)}</span>
+          <span className="bars__track">
             <span style={{ width: pct(g.confidence) }} />
           </span>
-          <span className="top3__pct">{pct(g.confidence)}</span>
+          <span className="bars__pct">{pct(g.confidence)}</span>
         </li>
       ))}
     </ol>

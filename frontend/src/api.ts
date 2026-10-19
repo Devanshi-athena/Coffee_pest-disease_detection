@@ -8,6 +8,7 @@ export type Prediction = {
   reason?: 'low_confidence' | 'unfamiliar_image' | null
   outcome?: string
   threshold: number
+  distance?: number | null
 }
 
 // Unset: local backend. Set to an empty string: same origin (backend also serves the frontend, e.g. Hugging Face).
@@ -46,5 +47,14 @@ export async function predict(image: Blob, filename: string, signal?: AbortSigna
     }
     throw new ApiError(FRIENDLY[res.status] ?? (detail || `Request failed (${res.status}).`), res.status)
   }
+  return res.json()
+}
+
+export type Health = { status: string; model_loaded: boolean }
+
+/** Pings the server. Also wakes a sleeping free-tier host before the first photo is sent. */
+export async function health(signal?: AbortSignal): Promise<Health> {
+  const res = await fetch(`${API_URL}/health`, { signal, cache: 'no-store' })
+  if (!res.ok) throw new ApiError(`Health check failed (${res.status}).`, res.status)
   return res.json()
 }
