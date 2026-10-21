@@ -1,0 +1,12 @@
+# Not needed on Vercel (keeps uploads and the function bundle small).
+archived_dump/
+ml/
+trial_images/
+data/
+docs/
+Data_dump/
+artifacts/
+backend/tests/
+backend/.venv/
+frontend/node_modules/
+frontend/dist/

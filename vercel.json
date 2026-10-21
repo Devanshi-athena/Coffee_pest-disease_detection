@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "cd frontend && npm ci --no-audit --no-fund",
+  "buildCommand": "(python3 deploy/fetch_model.py backend/models || echo 'model not bundled: the function downloads it at cold start') && cd frontend && printf 'VITE_API_URL=/api\\n' > .env.production.local && npm run build",
+  "outputDirectory": "frontend/dist",
+  "functions": {
+    "api/index.py": {
+      "includeFiles": "{backend/app/**,backend/models/**,configs/**,deploy/fetch_model.py,deploy/render/model_files.sha256}",
+      "maxDuration": 60
+    }
+  },
+  "rewrites": [{ "source": "/api/(.*)", "destination": "/api/index" }]
+}

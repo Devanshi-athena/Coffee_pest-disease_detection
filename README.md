@@ -128,6 +128,14 @@ Free tier: sleeps after 15 min idle (about a minute to wake), a few seconds per 
 To ship a new model: upload its files to a new release, point `MODEL_RELEASE` in the Dockerfile at it and
 regenerate `model_files.sha256`.
 
+### Public demo (Vercel, Hobby)
+
+`vercel.json` builds the frontend with `VITE_API_URL=/api` and serves the backend as a Python function
+(`api/index.py`, rewrites `/api/(.*)`). The model comes from the `baseline-v1` release via `deploy/fetch_model.py`
+(checksums in `deploy/render/model_files.sha256`): bundled at build time when possible, else downloaded to `/tmp`
+on cold start. Set up once: vercel.com -> Add New -> Project -> import this repo -> Deploy. Hobby is free but for
+non-commercial use. Render and Vercel both redeploy on every push to `main`.
+
 `deploy/huggingface/` does the same for a Hugging Face Docker Space (`push_space.py`); since mid-2026 Docker
 Spaces need a PRO subscription.
 

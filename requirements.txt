@@ -1,0 +1,8 @@
+# Runtime dependencies of the Vercel Python function (api/index.py). Same pins as backend/requirements.txt,
+# without the test tools. Local development uses backend/requirements.txt.
+fastapi==0.142.2
+onnxruntime==1.30.0
+pillow==12.3.0
+numpy==2.4.6
+python-multipart==0.0.32
+pyyaml==6.0.3
